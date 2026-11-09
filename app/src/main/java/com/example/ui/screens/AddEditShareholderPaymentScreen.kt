@@ -1,0 +1,652 @@
+package com.example.ui.screens
+
+import android.app.DatePickerDialog
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Paid
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Wallet
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.data.local.ShareholderEntity
+import com.example.data.local.ShareholderPaymentEntity
+import com.example.ui.components.AccessDeniedView
+import com.example.ui.components.BanglaNumberFormatter
+import com.example.ui.components.MainTopAppBar
+import com.example.ui.components.SnackbarController
+import com.example.ui.components.rememberHaptics
+import com.example.ui.viewmodel.PoultryViewModel
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
+@Composable
+fun AddEditShareholderPaymentScreen(
+    viewModel: PoultryViewModel,
+    paymentId: String? = null,
+    onBack: () -> Unit,
+    onNavigateToShareholderSettings: () -> Unit = {}
+) {
+    val context = LocalContext.current
+    val haptics = rememberHaptics()
+    val shareholders by viewModel.shareholders.collectAsState()
+    val allPayments by viewModel.shareholderPayments.collectAsState()
+
+    val isEditing = !paymentId.isNullOrBlank()
+    val existingPayment = remember(paymentId, allPayments) {
+        if (isEditing) allPayments.find { it.id == paymentId } else null
+    }
+
+    var selectedShareholder by remember(existingPayment, shareholders) {
+        mutableStateOf(
+            if (existingPayment != null) {
+                shareholders.find { it.id == existingPayment.shareholderId || it.name == existingPayment.shareholderName }
+            } else null
+        )
+    }
+
+    var selectedDate by remember(existingPayment) {
+        val rawDate = existingPayment?.date?.ifBlank { null }
+        val normalized = if (rawDate != null && rawDate.contains("/")) {
+            try {
+                val parts = rawDate.split("/")
+                if (parts.size == 3) "${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}"
+                else rawDate
+            } catch (e: Exception) { rawDate }
+        } else rawDate
+        mutableStateOf(normalized ?: SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()))
+    }
+
+    var amountText by remember(existingPayment) {
+        mutableStateOf(
+            if (existingPayment != null && existingPayment.amount > 0) {
+                if (existingPayment.amount % 1.0 == 0.0) existingPayment.amount.toLong().toString()
+                else existingPayment.amount.toString()
+            } else ""
+        )
+    }
+
+    var selectedMethod by remember(existingPayment) {
+        mutableStateOf(existingPayment?.paymentMethod ?: "Cash")
+    }
+
+    var noteText by remember(existingPayment) {
+        mutableStateOf(existingPayment?.note ?: "")
+    }
+
+    var isSaving by remember { mutableStateOf(false) }
+    var dropdownExpanded by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // DatePicker Dialog
+    val calendar = Calendar.getInstance()
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            val formatted = String.format(Locale.US, "%04d-%02d-%02d", year, month + 1, dayOfMonth)
+            selectedDate = formatted
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+
+    val currentUser by viewModel.currentUser.collectAsState()
+    val isAdmin = currentUser?.isAdmin() == true
+
+    if (!isAdmin) {
+        Scaffold(
+            topBar = {
+                MainTopAppBar(
+                    title = "পেমেন্ট ব্যবস্থাপনা",
+                    isRootScreen = false,
+                    onBackClick = onBack
+                )
+            }
+        ) { innerPadding ->
+            AccessDeniedView(
+                title = "পেমেন্ট ব্যবস্থাপনা সংরক্ষিত",
+                message = "শুধুমাত্র এডমিন শেয়ারহোল্ডার পেমেন্ট যোগ ও সম্পাদন করতে পারেন।",
+                modifier = Modifier.padding(innerPadding)
+            )
+        }
+        return
+    }
+
+    val liveAmount = amountText.toDoubleOrNull() ?: 0.0
+
+    Scaffold(
+        topBar = {
+            MainTopAppBar(
+                title = if (isEditing) "পেমেন্ট সম্পাদনা" else "শেয়ারহোল্ডার পেমেন্ট এন্ট্রি",
+                isRootScreen = false,
+                onBackClick = onBack
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(innerPadding)
+                .imePadding()
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState())
+                .testTag("add_edit_shareholder_payment_screen"),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // 1. Shareholder Selection
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "শেয়ারহোল্ডারের নাম",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+
+                if (shareholders.isEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = "কোনো শেয়ারহোল্ডার যুক্ত নেই। সেটিংস থেকে যোগ করুন।",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                            TextButton(onClick = onNavigateToShareholderSettings) {
+                                Text("সেটিংস", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                } else {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = selectedShareholder?.name ?: "",
+                            onValueChange = {},
+                            readOnly = true,
+                            placeholder = { Text("শেয়ারহোল্ডার নির্বাচন করুন") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Groups,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            trailingIcon = {
+                                IconButton(onClick = { dropdownExpanded = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = "Dropdown",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { dropdownExpanded = true }
+                                .testTag("dropdown_shareholder_select"),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                            )
+                        )
+
+                        DropdownMenu(
+                            expanded = dropdownExpanded,
+                            onDismissRequest = { dropdownExpanded = false },
+                            modifier = Modifier.fillMaxWidth(0.85f)
+                        ) {
+                            shareholders.forEach { sh ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = sh.name,
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                fontWeight = if (selectedShareholder?.id == sh.id) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                        )
+                                    },
+                                    onClick = {
+                                        selectedShareholder = sh
+                                        dropdownExpanded = false
+                                        errorMessage = null
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. Date Picker Field
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "তারিখ",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+                OutlinedTextField(
+                    value = "${BanglaNumberFormatter.formatBanglaDate(selectedDate)} ($selectedDate)",
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = { datePickerDialog.show() }) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Select Date",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { datePickerDialog.show() }
+                        .testTag("field_date"),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    )
+                )
+            }
+
+            // 3. Amount Field
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "কত টাকা দেওয়া হয়েছে",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+                OutlinedTextField(
+                    value = amountText,
+                    onValueChange = { input ->
+                        val cleaned = BanglaNumberFormatter.toEnglishDigits(input)
+                        if (cleaned.isEmpty() || cleaned.matches(Regex("^\\d*\\.?\\d*$"))) {
+                            amountText = cleaned
+                            errorMessage = null
+                        }
+                    },
+                    placeholder = { Text("০.০০") },
+                    leadingIcon = {
+                        Text(
+                            text = "৳",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 12.dp)
+                        )
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("input_payment_amount"),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    )
+                )
+            }
+
+            // 4. Live Amount Summary Card
+            if (liveAmount > 0) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Paid,
+                                contentDescription = "Total Amount",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "পরিশোধিত অর্থ (টাকা)",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            )
+                        }
+
+                        Text(
+                            text = BanglaNumberFormatter.formatCurrency(liveAmount),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontSize = 18.sp
+                            )
+                        )
+                    }
+                }
+            }
+
+            // 5. Payment Method Selection
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "পেমেন্ট মাধ্যম",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+
+                val methods = listOf(
+                    PaymentMethodItem("Cash", "ক্যাশ", Icons.Default.Payments),
+                    PaymentMethodItem("Bank", "ব্যাংক", Icons.Default.AccountBalance),
+                    PaymentMethodItem("bKash", "বিকাশ", Icons.Default.PhoneAndroid),
+                    PaymentMethodItem("Other", "অন্যান্য", Icons.Default.Wallet)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    methods.forEach { item ->
+                        PaymentMethodChip(
+                            item = item,
+                            isSelected = selectedMethod.equals(item.key, ignoreCase = true),
+                            onClick = {
+                                haptics.tap()
+                                selectedMethod = item.key
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            // 6. Note Field
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "মন্তব্য / নোট (ঐচ্ছিক)",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+                OutlinedTextField(
+                    value = noteText,
+                    onValueChange = { noteText = it },
+                    placeholder = { Text("পেমেন্ট সংক্রান্ত কোনো বিবরণ বা রেফারেন্স...") },
+                    minLines = 2,
+                    maxLines = 4,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("input_payment_note"),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    )
+                )
+            }
+
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage ?: "",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 7. Action Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onBack,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .testTag("btn_cancel_payment")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Cancel",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("বাতিল", fontWeight = FontWeight.SemiBold)
+                }
+
+                Button(
+                    onClick = {
+                        val parsed = amountText.toDoubleOrNull()
+                        if (selectedShareholder == null) {
+                            errorMessage = "অনুগ্রহ করে একজন শেয়ারহোল্ডার নির্বাচন করুন"
+                            return@Button
+                        }
+                        if (parsed == null || parsed <= 0) {
+                            errorMessage = "অনুগ্রহ করে সঠিক টাকার পরিমাণ লিখুন"
+                            return@Button
+                        }
+
+                        haptics.tap()
+                        isSaving = true
+                        errorMessage = null
+
+                        val finalShareholder = selectedShareholder!!
+                        val paymentToSave = ShareholderPaymentEntity(
+                            id = existingPayment?.id ?: "",
+                            shareholderId = finalShareholder.id,
+                            shareholderName = finalShareholder.name,
+                            date = selectedDate,
+                            amount = parsed,
+                            paymentMethod = selectedMethod,
+                            note = noteText.trim(),
+                            createdAt = existingPayment?.createdAt ?: System.currentTimeMillis()
+                        )
+
+                        if (isEditing) {
+                            viewModel.updateShareholderPayment(
+                                payment = paymentToSave,
+                                onSuccess = {
+                                    isSaving = false
+                                    SnackbarController.showMessage("পেমেন্ট সফলভাবে আপডেট হয়েছে!")
+                                    onBack()
+                                },
+                                onError = { err ->
+                                    isSaving = false
+                                    errorMessage = "আপডেট ব্যর্থ: $err"
+                                    SnackbarController.showError(errorMessage ?: "")
+                                }
+                            )
+                        } else {
+                            viewModel.addShareholderPayment(
+                                payment = paymentToSave,
+                                onSuccess = {
+                                    isSaving = false
+                                    SnackbarController.showMessage("পেমেন্ট সফলভাবে সংরক্ষিত হয়েছে!")
+                                    onBack()
+                                },
+                                onError = { err ->
+                                    isSaving = false
+                                    errorMessage = "সংরক্ষণ ব্যর্থ: $err"
+                                    SnackbarController.showError(errorMessage ?: "")
+                                }
+                            )
+                        }
+                    },
+                    enabled = !isSaving,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .testTag("btn_save_payment"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Save",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isSaving) "সংরক্ষণ হচ্ছে..." else if (isEditing) "আপডেট করুন" else "সংরক্ষণ করুন",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+private data class PaymentMethodItem(
+    val key: String,
+    val label: String,
+    val icon: ImageVector
+)
+
+@Composable
+private fun PaymentMethodChip(
+    item: PaymentMethodItem,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val bgColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+    val contentColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(bgColor)
+            .border(1.dp, borderColor, RoundedCornerShape(10.dp))
+            .clickable { onClick() }
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = item.label,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    fontSize = 12.sp
+                ),
+                color = contentColor
+            )
+        }
+    }
+}
+
+

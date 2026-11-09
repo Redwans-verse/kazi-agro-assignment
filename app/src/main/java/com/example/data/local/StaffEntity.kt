@@ -1,0 +1,20 @@
+package com.example.data.local
+
+import androidx.annotation.Keep
+import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
+
+@Keep
+@JsonClass(generateAdapter = true)
+data class StaffEntity(
+    @Json(name = "id")
+    val id: String = "",
+    @Json(name = "name")
+    val name: String = "",
+    @Json(name = "phone")
+    val phone: String = "",
+    @Json(name = "designation")
+    val designation: String = "",
+    @Json(name = "createdAt")
+    val createdAt: Long = System.currentTimeMillis()
+)
