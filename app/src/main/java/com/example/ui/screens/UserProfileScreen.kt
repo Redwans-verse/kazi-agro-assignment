@@ -24,28 +24,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AdminPanelSettings
-import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.AssignmentInd
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Engineering
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Store
-import androidx.compose.material.icons.filled.SupervisorAccount
 import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -92,8 +84,6 @@ fun UserProfileScreen(
     val context = LocalContext.current
     val haptics = rememberHaptics()
     val currentUser by viewModel.currentUser.collectAsState()
-    val rolePermissionsMap by viewModel.rolePermissions.collectAsState()
-    val userPerms = currentUser?.let { rolePermissionsMap[it.role.uppercase()] }
 
     var name by remember(currentUser) { mutableStateOf(currentUser?.username ?: "") }
     var phone by remember(currentUser) { mutableStateOf(currentUser?.phone ?: "") }
@@ -550,109 +540,7 @@ fun UserProfileScreen(
             }
 
             // ══════════════════════════════════════════════════════════
-            // 3. ROLE-BASED ACCESS PERMISSIONS CARD
-            // ══════════════════════════════════════════════════════════
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.Security,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = "আপনার এক্সেস সুবিধাসমূহ",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "রোল অনুযায়ী আপনার নির্ধারিত অনুমতিসমূহ",
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    // Live dynamic permissions evaluated based on rolePermissionsMap
-                    PermissionRow(
-                        icon = Icons.Default.Visibility,
-                        title = "দৈনিক রিপোর্ট রেজিস্টার প্রদর্শন",
-                        allowed = currentUser?.canViewReport(userPerms) == true
-                    )
-                    PermissionRow(
-                        icon = Icons.Default.Edit,
-                        title = "দৈনিক রিপোর্ট তৈরি ও ডাটা এন্ট্রি",
-                        allowed = currentUser?.canAddReport(userPerms) == true
-                    )
-                    PermissionRow(
-                        icon = Icons.Default.Edit,
-                        title = "দৈনিক রিপোর্ট এডিট ও আপডেট",
-                        allowed = currentUser?.canEditReport(userPerms) == true
-                    )
-                    PermissionRow(
-                        icon = Icons.Default.Paid,
-                        title = "মাসিক ব্যয় রেজিস্টার প্রদর্শন",
-                        allowed = currentUser?.canViewExpense(userPerms) == true
-                    )
-                    PermissionRow(
-                        icon = Icons.Default.Paid,
-                        title = "মাসিক ব্যয় এন্ট্রি ও সংরক্ষণ",
-                        allowed = currentUser?.canAddExpense(userPerms) == true
-                    )
-                    PermissionRow(
-                        icon = Icons.Default.Assessment,
-                        title = "রিপোর্ট ও অ্যানালিটিক্স প্রদর্শন",
-                        allowed = currentUser?.canViewReportsAndAnalytics(userPerms) == true
-                    )
-                    PermissionRow(
-                        icon = Icons.Default.CloudDownload,
-                        title = "পিডিএফ ও এক্সেল রিপোর্ট ডাউনলোড",
-                        allowed = currentUser?.canDownloadReports(userPerms) == true
-                    )
-                    PermissionRow(
-                        icon = Icons.Default.Store,
-                        title = "খামার প্রোফাইল ও লোগো পরিবর্তন",
-                        allowed = currentUser?.canEditFarmProfile() == true
-                    )
-                    PermissionRow(
-                        icon = Icons.Default.SupervisorAccount,
-                        title = "ব্যবহারকারী রেজিস্ট্রেশন অনুমোদন ও রোল নিয়ন্ত্রণ",
-                        allowed = currentUser?.canManageUsers(userPerms) == true || currentUser?.isAdmin() == true
-                    )
-                }
-            }
-
-            // ══════════════════════════════════════════════════════════
-            // 4. LOGOUT SECTION
+            // 3. LOGOUT SECTION
             // ══════════════════════════════════════════════════════════
             OutlinedButton(
                 onClick = {
@@ -674,65 +562,6 @@ fun UserProfileScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
-}
-
-@Composable
-private fun PermissionRow(
-    icon: ImageVector,
-    title: String,
-    allowed: Boolean
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f).padding(end = 8.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (allowed) Color(0xFF2E7D32) else MaterialTheme.colorScheme.outlineVariant,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = 12.sp,
-                    fontWeight = if (allowed) FontWeight.Medium else FontWeight.Normal,
-                    color = if (allowed) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
-            )
-        }
-        Surface(
-            shape = RoundedCornerShape(6.dp),
-            color = if (allowed) Color(0xFFE8F5E9) else Color(0xFFF5F5F5)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(3.dp),
-                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
-            ) {
-                Icon(
-                    imageVector = if (allowed) Icons.Default.CheckCircle else Icons.Default.Lock,
-                    contentDescription = null,
-                    tint = if (allowed) Color(0xFF2E7D32) else Color(0xFF9E9E9E),
-                    modifier = Modifier.size(11.dp)
-                )
-                Text(
-                    text = if (allowed) "সক্রিয়" else "অনুমতি নেই",
-                    color = if (allowed) Color(0xFF1B5E20) else Color(0xFF757575),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
         }
     }
 }
