@@ -1,4 +1,4 @@
-package com.example.ui.screens
+﻿package com.example.ui.screens
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.background
@@ -223,9 +223,7 @@ fun AllStaffPaymentsScreen(
         ) {
             Spacer(modifier = Modifier.height(2.dp))
 
-            // ══════════════════════════════════════════════════════════════
             // Top Controls: Month Selector & Filter
-            // ══════════════════════════════════════════════════════════════
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -363,9 +361,7 @@ fun AllStaffPaymentsScreen(
                 singleLine = true
             )
 
-            // ══════════════════════════════════════════════════════════════
             // Bento Grid Summary Cards: Total Staff, Total Payments, Total Paid
-            // ══════════════════════════════════════════════════════════════
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -464,9 +460,7 @@ fun AllStaffPaymentsScreen(
                 }
             }
 
-            // ══════════════════════════════════════════════════════════════
             // Staff Payment Table / Sheet
-            // ══════════════════════════════════════════════════════════════
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -703,9 +697,7 @@ fun AllStaffPaymentsScreen(
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Dialog: Delete Payment Confirmation
-    // ══════════════════════════════════════════════════════════════
     deletingPayment?.let { payment ->
         var isDeleting by remember { mutableStateOf(false) }
 
@@ -762,9 +754,7 @@ fun AllStaffPaymentsScreen(
         )
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Filter Modal Dialog
-    // ══════════════════════════════════════════════════════════════
     if (showFilterDialog) {
         AlertDialog(
             onDismissRequest = { showFilterDialog = false },

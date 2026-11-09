@@ -1,4 +1,4 @@
-package com.example.ui.viewmodel
+﻿package com.example.ui.viewmodel
 
 import android.app.Application
 import android.content.Context
@@ -835,9 +835,7 @@ class PoultryViewModel(application: Application) : AndroidViewModel(application)
         context.startActivity(Intent.createChooser(intent, "$subject এক্সপোর্ট করুন"))
     }
 
-    // ══════════════════════════════════════════════════════════════════════
     // Google Sheets Cloud Backup Operations
-    // ══════════════════════════════════════════════════════════════════════
 
     fun refreshSheetsBackupState() {
         _lastSheetsBackupTime.value = sheetsBackupManager.getLastBackupTimestamp()
@@ -977,9 +975,7 @@ class PoultryViewModel(application: Application) : AndroidViewModel(application)
         appUpdateManager.dismissUpdate()
     }
 
-    // ══════════════════════════════════════════════════════════════════════
     // Shareholder Management (Admin only)
-    // ══════════════════════════════════════════════════════════════════════
 
     fun addShareholder(name: String, onSuccess: () -> Unit = {}, onError: (String) -> Unit = {}) {
         viewModelScope.launch {
@@ -1030,9 +1026,7 @@ class PoultryViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════
     // Shareholder Payment Management
-    // ══════════════════════════════════════════════════════════════════════
 
     fun addShareholderPayment(
         payment: ShareholderPaymentEntity,
@@ -1094,9 +1088,7 @@ class PoultryViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════
     // Staff Management
-    // ══════════════════════════════════════════════════════════════════════
 
     fun addStaff(name: String, phone: String, onSuccess: (StaffEntity) -> Unit = {}, onError: (String) -> Unit = {}) {
         viewModelScope.launch {
@@ -1149,9 +1141,7 @@ class PoultryViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════
     // Staff Payment Management
-    // ══════════════════════════════════════════════════════════════════════
 
     fun addStaffPayment(
         payment: StaffPaymentEntity,

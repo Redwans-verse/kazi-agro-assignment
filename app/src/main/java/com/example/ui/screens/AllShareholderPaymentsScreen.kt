@@ -1,4 +1,4 @@
-package com.example.ui.screens
+﻿package com.example.ui.screens
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.background
@@ -275,9 +275,7 @@ fun AllShareholderPaymentsScreen(
                 .testTag("all_shareholder_payments_screen"),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // ══════════════════════════════════════════════════════════════
-            // Top Summary Section (Bento Grid matching Stitch design)
-            // ══════════════════════════════════════════════════════════════
+            // Top summary statistics cards
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -383,9 +381,7 @@ fun AllShareholderPaymentsScreen(
                 }
             }
 
-            // ══════════════════════════════════════════════════════════════
             // Search & Month Selector Filter Row
-            // ══════════════════════════════════════════════════════════════
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -469,9 +465,7 @@ fun AllShareholderPaymentsScreen(
                 }
             }
 
-            // ══════════════════════════════════════════════════════════════
             // Active Filter Badge & Header
-            // ══════════════════════════════════════════════════════════════
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -499,9 +493,7 @@ fun AllShareholderPaymentsScreen(
                 }
             }
 
-            // ══════════════════════════════════════════════════════════════
-            // Payment Records Table / Sheet View (Matching Stitch design)
-            // ══════════════════════════════════════════════════════════════
+            // Payment records table view
             if (filteredPayments.isEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -747,9 +739,7 @@ fun AllShareholderPaymentsScreen(
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Filter Modal Dialog / Sheet
-    // ══════════════════════════════════════════════════════════════
     if (showFilterDialog) {
         var tempShareholder by remember { mutableStateOf(selectedShareholderFilter) }
         var tempMethod by remember { mutableStateOf(selectedMethodFilter) }
@@ -914,9 +904,7 @@ fun AllShareholderPaymentsScreen(
         )
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Delete Payment Confirmation Dialog
-    // ══════════════════════════════════════════════════════════════
     deletingPayment?.let { payment ->
         var isDeleting by remember { mutableStateOf(false) }
 

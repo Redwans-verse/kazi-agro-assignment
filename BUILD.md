@@ -1,48 +1,62 @@
-# Build & Deployment Guide - Kazi Agrotech Frontend
+# Build & Execution Guide - Kazi Agrotech
 
-This standalone frontend project is pre-configured with in-memory state management and mock data. It builds independently without any remote Firebase or Google services setup.
-
----
-
-## 1. Quick APK Build via GitHub Actions
-
-1. Initialize git and push to your new GitHub repository:
-   ```bash
-   git init
-   git add .
-   git commit -m "Kazi Agrotech Presentation Version"
-   git branch -M main
-   git remote add origin https://github.com/<your-username>/<your-repo-name>.git
-   git push -u origin main
-   ```
-2. Navigate to the **Actions** tab on your GitHub repository.
-3. Select the **Build Android APK** workflow.
-4. Click **Run workflow** (or wait for the automatic push trigger).
-5. Once completed, scroll down to **Artifacts** and download `kazi-agrotech-debug-apk`.
+Instructions for building and running the Kazi Agrotech Android application locally and via automated CI/CD.
 
 ---
 
-## 2. Local Build (Android Studio or CLI)
+## 1. Environment & Prerequisites
 
-### CLI (Windows PowerShell):
+- **JDK Version**: OpenJDK / Eclipse Temurin 21
+- **Android SDK**: Compile SDK 36, Target SDK 36, Min SDK 24 (Android 7.0+)
+- **Build Tool**: Gradle 9.3.1 with Android Gradle Plugin 9.1.1
+- **Application ID**: `com.kaziagro.poultry`
+
+---
+
+## 2. Building via Android Studio
+
+1. Open **Android Studio** (Ladybug / Meerkat or newer recommended).
+2. Select **Open** and choose the `kazi-agrotech-frontend` project directory.
+3. Allow Gradle to synchronize dependencies.
+4. To build the APK:
+   - Select **Build > Build Bundle(s) / APK(s) > Build APK(s)**.
+   - Or click the **Run** button (green play icon) to launch directly on an emulator or physical device.
+
+---
+
+## 3. Building via Command Line (Gradle)
+
+### Windows (PowerShell / Command Prompt):
 ```powershell
+# Build Debug APK
 .\gradlew.bat assembleDebug -x test
+
+# Build Release APK
+.\gradlew.bat assembleRelease -x test
 ```
 
-### CLI (Linux / macOS):
+### macOS / Linux:
 ```bash
 chmod +x ./gradlew
+
+# Build Debug APK
 ./gradlew assembleDebug -x test
+
+# Build Release APK
+./gradlew assembleRelease -x test
 ```
 
-The generated APK will be at:
-`app/build/outputs/apk/debug/app-debug.apk`
+### Output APK Locations:
+- **Debug APK**: `app/build/outputs/apk/debug/app-debug.apk`
+- **Release APK**: `app/build/outputs/apk/release/app-release.apk`
 
 ---
 
-## 3. Project Configuration
+## 4. Automated Builds (GitHub Actions)
 
-- **Package Name**: `com.aistudio.kaziagro.poultr`
-- **Compile SDK**: 36
-- **Min SDK**: 24
-- **Keystore**: Pre-configured `debug.keystore` included in repository root for instant compilation.
+This repository includes a continuous integration workflow (`.github/workflows/build-apk.yml`) that automatically compiles both Debug and Release APKs upon every push to the `main` branch.
+
+To download the compiled APKs:
+1. Open the repository on GitHub and click the **Actions** tab.
+2. Select the latest completed workflow run (**Build Android APK**).
+3. Scroll down to the **Artifacts** section at the bottom to download `kazi-agrotech-debug-apk` or `kazi-agrotech-release-apk`.

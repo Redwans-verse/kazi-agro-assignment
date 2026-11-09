@@ -1,4 +1,4 @@
-package com.example.ui.screens
+﻿package com.example.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -130,9 +130,7 @@ fun UserProfileScreen(
                 .testTag("user_profile_screen"),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // ══════════════════════════════════════════════════════════
             // 1. PROFESSIONAL PROFILE HEADER CARD
-            // ══════════════════════════════════════════════════════════
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -395,9 +393,7 @@ fun UserProfileScreen(
                 }
             }
 
-            // ══════════════════════════════════════════════════════════
             // 2. PERSONAL INFORMATION EDIT CARD
-            // ══════════════════════════════════════════════════════════
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -539,9 +535,7 @@ fun UserProfileScreen(
                 }
             }
 
-            // ══════════════════════════════════════════════════════════
             // 3. LOGOUT SECTION
-            // ══════════════════════════════════════════════════════════
             OutlinedButton(
                 onClick = {
                     viewModel.logout {

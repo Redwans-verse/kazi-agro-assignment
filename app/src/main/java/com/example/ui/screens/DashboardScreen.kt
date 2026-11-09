@@ -337,7 +337,7 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(72.dp))
         }
 
-        // Payment Option Choice Modal Dialog (Matching Stitch _5 Spec)
+        // Payment option selection dialog
         if (showPaymentTypeDialog) {
             androidx.compose.material3.AlertDialog(
                 onDismissRequest = { showPaymentTypeDialog = false },

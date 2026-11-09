@@ -126,7 +126,7 @@ jobs:
           $COMMITS
 
           ### 🔒 ভেরিফিকেশন তথ্য (Verification):
-          - **Package:** \`com.aistudio.kaziagro.poultr\`
+          - **Package:** \`com.kaziagro.poultry\`
           - **Version:** \`v${VERSION_NAME}\` (\`VersionCode: ${VERSION_CODE}\`)
           - **Release Date:** \`$(date -u +%Y-%m-%d)\`
           EOF

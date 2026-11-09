@@ -1,4 +1,4 @@
-package com.example.ui.screens
+﻿package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -232,9 +232,7 @@ fun StaffSettingsScreen(
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Dialog: Add Staff
-    // ══════════════════════════════════════════════════════════════
     if (showAddDialog) {
         var inputName by remember { mutableStateOf("") }
         var inputPhone by remember { mutableStateOf("") }
@@ -337,9 +335,7 @@ fun StaffSettingsScreen(
         )
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Dialog: Edit Staff
-    // ══════════════════════════════════════════════════════════════
     editingStaff?.let { staff ->
         var inputName by remember(staff) { mutableStateOf(staff.name) }
         var inputPhone by remember(staff) { mutableStateOf(staff.phone) }
@@ -440,9 +436,7 @@ fun StaffSettingsScreen(
         )
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Dialog: Delete Staff
-    // ══════════════════════════════════════════════════════════════
     deletingStaff?.let { staff ->
         var isDeleting by remember { mutableStateOf(false) }
 

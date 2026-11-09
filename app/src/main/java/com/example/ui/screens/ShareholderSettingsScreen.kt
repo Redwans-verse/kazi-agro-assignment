@@ -1,4 +1,4 @@
-package com.example.ui.screens
+﻿package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -199,9 +199,7 @@ fun ShareholderSettingsScreen(
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Dialog: Add Shareholder
-    // ══════════════════════════════════════════════════════════════
     if (showAddDialog) {
         var inputName by remember { mutableStateOf("") }
         var isSaving by remember { mutableStateOf(false) }
@@ -270,9 +268,7 @@ fun ShareholderSettingsScreen(
         )
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Dialog: Edit Shareholder
-    // ══════════════════════════════════════════════════════════════
     editingShareholder?.let { shareholder ->
         var inputName by remember { mutableStateOf(shareholder.name) }
         var isSaving by remember { mutableStateOf(false) }
@@ -340,9 +336,7 @@ fun ShareholderSettingsScreen(
         )
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Dialog: Delete Confirmation
-    // ══════════════════════════════════════════════════════════════
     deletingShareholder?.let { shareholder ->
         var isDeleting by remember { mutableStateOf(false) }
 

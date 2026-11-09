@@ -17,7 +17,7 @@ android {
       ?: "1.0.0"
 
   defaultConfig {
-    applicationId = "com.aistudio.kaziagro.poultr"
+    applicationId = "com.kaziagro.poultry"
     minSdk = 24
     targetSdk = 36
     versionCode = propVersionCode

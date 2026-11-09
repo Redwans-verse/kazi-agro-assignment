@@ -1,4 +1,4 @@
-package com.example.ui.screens
+﻿package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -225,9 +225,7 @@ fun IndividualShareholderHistoryScreen(
                 .testTag("individual_shareholder_history_screen"),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // ══════════════════════════════════════════════════════════════
-            // Top Summary Section (Bento Grid matching Stitch _3 design)
-            // ══════════════════════════════════════════════════════════════
+            // Summary statistics overview cards
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -298,9 +296,7 @@ fun IndividualShareholderHistoryScreen(
                 }
             }
 
-            // ══════════════════════════════════════════════════════════════
             // Search & Month Selector Filter Row
-            // ══════════════════════════════════════════════════════════════
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -383,9 +379,7 @@ fun IndividualShareholderHistoryScreen(
                 }
             }
 
-            // ══════════════════════════════════════════════════════════════
             // Detailed Chronological Payment List / Table
-            // ══════════════════════════════════════════════════════════════
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -628,9 +622,7 @@ fun IndividualShareholderHistoryScreen(
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Delete Payment Confirmation Dialog
-    // ══════════════════════════════════════════════════════════════
     deletingPayment?.let { payment ->
         var isDeleting by remember { mutableStateOf(false) }
 

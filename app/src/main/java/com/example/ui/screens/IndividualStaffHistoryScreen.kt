@@ -1,4 +1,4 @@
-package com.example.ui.screens
+﻿package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -229,9 +229,7 @@ fun IndividualStaffHistoryScreen(
         ) {
             Spacer(modifier = Modifier.height(2.dp))
 
-            // ══════════════════════════════════════════════════════════════
             // Profile Header (Avatar + Name)
-            // ══════════════════════════════════════════════════════════════
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -267,9 +265,7 @@ fun IndividualStaffHistoryScreen(
                 }
             }
 
-            // ══════════════════════════════════════════════════════════════
             // Bento Grid Summary Cards (Total Payments Count & Total Amount)
-            // ══════════════════════════════════════════════════════════════
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -334,9 +330,7 @@ fun IndividualStaffHistoryScreen(
                 }
             }
 
-            // ══════════════════════════════════════════════════════════════
             // Filter Controls (Month Selector & Search)
-            // ══════════════════════════════════════════════════════════════
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -445,9 +439,7 @@ fun IndividualStaffHistoryScreen(
                 singleLine = true
             )
 
-            // ══════════════════════════════════════════════════════════════
             // History Section Header & Table ("বিস্তারিত লেনদেন")
-            // ══════════════════════════════════════════════════════════════
             Text(
                 text = "বিস্তারিত লেনদেন",
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -660,9 +652,7 @@ fun IndividualStaffHistoryScreen(
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Dialog: Delete Payment Confirmation
-    // ══════════════════════════════════════════════════════════════
     deletingPayment?.let { payment ->
         var isDeleting by remember { mutableStateOf(false) }
 

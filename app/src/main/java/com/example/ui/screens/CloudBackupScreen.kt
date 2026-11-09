@@ -1,4 +1,4 @@
-package com.example.ui.screens
+﻿package com.example.ui.screens
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -186,9 +186,7 @@ fun CloudBackupScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            // ══════════════════════════════════════════════════════════════
             // Card 1: Cloud Sync Status & Instant Backup Button
-            // ══════════════════════════════════════════════════════════════
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -334,9 +332,7 @@ fun CloudBackupScreen(
                 }
             }
 
-            // ══════════════════════════════════════════════════════════════
             // Card 2: Auto Backup & Schedule Settings
-            // ══════════════════════════════════════════════════════════════
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -455,9 +451,7 @@ fun CloudBackupScreen(
                 }
             }
 
-            // ══════════════════════════════════════════════════════════════
             // Card 3: Google Apps Script Web App Configuration (Admin Only)
-            // ══════════════════════════════════════════════════════════════
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -563,9 +557,7 @@ fun CloudBackupScreen(
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Dialog: Edit Web App URL & API Token
-    // ══════════════════════════════════════════════════════════════
     if (showConfigDialog) {
         var inputUrl by remember { mutableStateOf(webAppUrl) }
         var inputToken by remember { mutableStateOf(apiToken) }
@@ -652,9 +644,7 @@ fun CloudBackupScreen(
         )
     }
 
-    // ══════════════════════════════════════════════════════════════
     // Dialog: Setup Instructions Guide
-    // ══════════════════════════════════════════════════════════════
     if (showInstructionsDialog) {
         AlertDialog(
             onDismissRequest = { showInstructionsDialog = false },
