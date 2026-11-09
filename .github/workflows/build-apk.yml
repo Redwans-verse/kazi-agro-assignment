@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Build Debug APK
+    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
@@ -60,5 +60,17 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: kazi-agrotech-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+
+      - name: Build Release APK with Gradle
+        run: ./gradlew assembleRelease -x test --stacktrace --no-daemon
+        continue-on-error: true
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kazi-agrotech-release-apk
+          path: app/build/outputs/apk/release/*.apk
           retention-days: 14

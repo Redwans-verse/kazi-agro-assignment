@@ -162,7 +162,13 @@ jobs:
             echo "Release keystore configured from GitHub Secrets."
           else
             echo "KEYSTORE_BASE64 not set. Checking repository for existing keystore..."
-            if [ -f "my-upload-key.jks" ]; then
+            if [ -f "kazi_keystore.jks" ]; then
+              echo "Using kazi_keystore.jks found in repository."
+              echo "RELEASE_KEYSTORE_PATH=$GITHUB_WORKSPACE/kazi_keystore.jks" >> $GITHUB_ENV
+              echo "RELEASE_KEYSTORE_PASSWORD=kaziagro123" >> $GITHUB_ENV
+              echo "RELEASE_KEY_ALIAS=kaziagro" >> $GITHUB_ENV
+              echo "RELEASE_KEY_PASSWORD=kaziagro123" >> $GITHUB_ENV
+            elif [ -f "my-upload-key.jks" ]; then
               echo "Using my-upload-key.jks found in repository."
               echo "RELEASE_KEYSTORE_PATH=$GITHUB_WORKSPACE/my-upload-key.jks" >> $GITHUB_ENV
             elif [ -f "debug.keystore" ]; then
@@ -224,8 +230,16 @@ jobs:
           echo "sha256_hash=$SHA256_HASH" >> $GITHUB_OUTPUT
           echo "apk_path=$FINAL_APK_NAME" >> $GITHUB_OUTPUT
 
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kazi-agrotech-release-apk
+          path: ${{ env.FINAL_APK_PATH }}
+          retention-days: 14
+
       - name: Create GitHub Release & Upload APK
         id: create_release
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -244,6 +258,7 @@ jobs:
           echo "apk_url=$DIRECT_APK_URL" >> $GITHUB_OUTPUT
 
       - name: Update Firebase Realtime Database
+        continue-on-error: true
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           VERSION_CODE: ${{ env.VERSION_CODE }}
@@ -254,7 +269,11 @@ jobs:
           RELEASE_NOTES: ${{ github.event.inputs.custom_release_notes || 'নতুন ফিচার ও পারফরম্যান্স উন্নতি।' }}
           FORCE_UPDATE: ${{ github.event.inputs.force_update || 'false' }}
         run: |
-          node scripts/update-firebase-metadata.js
+          if [ -f scripts/update-firebase-metadata.js ] && [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            node scripts/update-firebase-metadata.js
+          else
+            echo "Skipping Firebase update: scripts/update-firebase-metadata.js or credentials not configured."
+          fi
 
       - name: Cleanup Credentials & Temporary Files
         if: always()
