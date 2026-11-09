@@ -21,6 +21,13 @@ data class RolePermissionConfig(
     val reportAnalyticsDownload: Boolean = true
 ) {
     companion object {
+        fun getAllRoles(): List<Pair<String, String>> = listOf(
+            "ADMIN" to "এডমিন (Admin)",
+            "MANAGER" to "খামার ম্যানেজার",
+            "SUPERVISOR" to "সুপারভাইজার",
+            "WORKER" to "কর্মী (Worker)"
+        )
+
         fun getDefaultPermissionsForRole(role: String): RolePermissionConfig {
             return when (role.uppercase()) {
                 "ADMIN" -> RolePermissionConfig(

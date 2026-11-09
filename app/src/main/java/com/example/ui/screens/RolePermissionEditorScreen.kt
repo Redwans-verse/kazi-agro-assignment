@@ -293,7 +293,7 @@ fun RolePermissionEditorScreen(
                         onDismissRequest = { showRoleDropdown = false },
                         modifier = Modifier.testTag("menu_role_selection")
                     ) {
-                        allRoles.forEach { (roleKey, roleName) ->
+                        for ((roleKey, roleName) in allRoles) {
                             val isSelected = selectedRoleKey == roleKey
                             DropdownMenuItem(
                                 text = {
