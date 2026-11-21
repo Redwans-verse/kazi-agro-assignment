@@ -1,4 +1,4 @@
-﻿package com.example.ui.screens
+package com.example.ui.screens
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.background

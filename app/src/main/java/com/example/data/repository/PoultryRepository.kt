@@ -14,6 +14,10 @@ import com.example.data.local.StaffEntity
 import com.example.data.local.StaffPaymentEntity
 import com.example.data.local.UserEntity
 import com.example.domain.StockCalculationService
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +35,7 @@ class PoultryRepository(
     private val context: Context
 ) {
     private val TAG = "PoultryRepository"
-    private val prefs: SharedPreferences = context.getSharedPreferences("kazi_agro_prefs", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = context.getSharedPreferences("kazi_agro_prefs_v2", Context.MODE_PRIVATE)
 
     private val PREF_KEY_REMEMBER = "key_remember_login"
     private val PREF_KEY_REMEMBERED_EMAIL = "key_remembered_email"
@@ -47,6 +51,27 @@ class PoultryRepository(
     private val PREF_KEY_INITIAL_DATE = "key_initial_opening_date"
     private val PREF_KEY_IS_MANUAL_STOCK = "key_is_manual_stock"
     private val PREF_KEY_MANUAL_STOCK_COUNT = "key_manual_stock_count"
+    private val PREF_KEY_USERS_JSON = "key_users_json"
+    private val PREF_KEY_CURRENT_USER_JSON = "key_current_user_json"
+    private val PREF_KEY_IS_LOGGED_IN = "key_is_logged_in"
+    private val PREF_KEY_SHAREHOLDERS_JSON = "key_shareholders_json"
+    private val PREF_KEY_SHAREHOLDER_PAYMENTS_JSON = "key_shareholder_payments_json"
+
+    private val moshi: Moshi = Moshi.Builder()
+        .addLast(KotlinJsonAdapterFactory())
+        .build()
+
+    private val usersListAdapter: JsonAdapter<List<UserEntity>> = moshi.adapter(
+        Types.newParameterizedType(List::class.java, UserEntity::class.java)
+    )
+    private val userAdapter: JsonAdapter<UserEntity> = moshi.adapter(UserEntity::class.java)
+
+    private val shareholdersListAdapter: JsonAdapter<List<ShareholderEntity>> = moshi.adapter(
+        Types.newParameterizedType(List::class.java, ShareholderEntity::class.java)
+    )
+    private val shareholderPaymentsListAdapter: JsonAdapter<List<ShareholderPaymentEntity>> = moshi.adapter(
+        Types.newParameterizedType(List::class.java, ShareholderPaymentEntity::class.java)
+    )
 
     // Helper date generator for realistic college presentation data
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -64,12 +89,16 @@ class PoultryRepository(
         return displayDateFormat.format(cal.time)
     }
 
+    private fun getSanitizedOwnerName(): String {
+        return prefs.getString(PREF_KEY_OWNER_NAME, "টিম আলফা") ?: "টিম আলফা"
+    }
+
     // Default mock farm profile
     private val _farmProfile = MutableStateFlow(
         FarmProfileEntity(
             id = 1,
             farmName = prefs.getString(PREF_KEY_FARM_NAME, "কাজী এগ্রোটেক") ?: "কাজী এগ্রোটেক",
-            ownerName = prefs.getString(PREF_KEY_OWNER_NAME, "মোঃ সাহারিয়ার রেদোয়ান") ?: "মোঃ সাহারিয়ার রেদোয়ান",
+            ownerName = getSanitizedOwnerName(),
             mobileNumber = prefs.getString(PREF_KEY_MOBILE, "০১৭১২-৩৪৫৬৭৮") ?: "০১৭১২-৩৪৫৬৭৮",
             address = prefs.getString(PREF_KEY_ADDRESS, "খামার পাড়া, শ্রীপুর, গাজীপুর") ?: "খামার পাড়া, শ্রীপুর, গাজীপুর",
             logoUri = prefs.getString(PREF_KEY_LOGO_URI, "") ?: "",
@@ -89,7 +118,7 @@ class PoultryRepository(
     private val defaultUsers = listOf(
         UserEntity(
             id = "user_admin",
-            username = "সাহারিয়ার রেদোয়ান",
+            username = "টিম আলফা",
             email = "admin@kaziagro.com",
             phone = "০১৭০০-১২৩৪৫৬",
             role = "ADMIN",
@@ -125,11 +154,89 @@ class PoultryRepository(
         )
     )
 
-    private val _allUsers = MutableStateFlow<List<UserEntity>>(defaultUsers)
+    private fun loadUsersFromPrefs(): List<UserEntity> {
+        val json = prefs.getString(PREF_KEY_USERS_JSON, null)
+        if (!json.isNullOrBlank()) {
+            try {
+                val list = usersListAdapter.fromJson(json)
+                if (!list.isNullOrEmpty()) {
+                    return list
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error parsing users from prefs", e)
+            }
+        }
+        return defaultUsers
+    }
+
+    private fun loadCurrentUserFromPrefs(users: List<UserEntity>): UserEntity? {
+        val isFirstLaunch = !prefs.contains(PREF_KEY_IS_LOGGED_IN)
+        if (isFirstLaunch) {
+            val initialAdmin = users.firstOrNull { it.role.equals("ADMIN", ignoreCase = true) }
+                ?: users.firstOrNull() ?: defaultUsers[0]
+            saveCurrentUserToPrefs(initialAdmin)
+            return initialAdmin
+        }
+
+        val isLoggedIn = prefs.getBoolean(PREF_KEY_IS_LOGGED_IN, false)
+        if (!isLoggedIn) {
+            return null
+        }
+
+        val userJson = prefs.getString(PREF_KEY_CURRENT_USER_JSON, null)
+        if (!userJson.isNullOrBlank()) {
+            try {
+                val user = userAdapter.fromJson(userJson)
+                if (user != null) {
+                    return users.find { it.id == user.id || it.email.equals(user.email, ignoreCase = true) } ?: user
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error parsing current user from prefs", e)
+            }
+        }
+
+        val rememberedEmail = prefs.getString(PREF_KEY_REMEMBERED_EMAIL, null)
+        if (!rememberedEmail.isNullOrBlank()) {
+            val user = users.find { it.email.equals(rememberedEmail, ignoreCase = true) }
+            if (user != null) {
+                return user
+            }
+        }
+
+        return null
+    }
+
+    private fun saveUsersToPrefs(users: List<UserEntity>) {
+        try {
+            val json = usersListAdapter.toJson(users)
+            prefs.edit().putString(PREF_KEY_USERS_JSON, json).apply()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving users to prefs", e)
+        }
+    }
+
+    private fun saveCurrentUserToPrefs(user: UserEntity?) {
+        try {
+            val editor = prefs.edit()
+            if (user != null) {
+                val json = userAdapter.toJson(user)
+                editor.putString(PREF_KEY_CURRENT_USER_JSON, json)
+                    .putBoolean(PREF_KEY_IS_LOGGED_IN, true)
+                    .putString(PREF_KEY_REMEMBERED_EMAIL, user.email)
+            } else {
+                editor.remove(PREF_KEY_CURRENT_USER_JSON)
+                    .putBoolean(PREF_KEY_IS_LOGGED_IN, false)
+            }
+            editor.apply()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving current user to prefs", e)
+        }
+    }
+
+    private val _allUsers = MutableStateFlow<List<UserEntity>>(loadUsersFromPrefs())
     val allUsers: Flow<List<UserEntity>> = _allUsers.asStateFlow()
 
-    // Default logged in session (Admin)
-    private val _currentUser = MutableStateFlow<UserEntity?>(defaultUsers[0])
+    private val _currentUser = MutableStateFlow<UserEntity?>(loadCurrentUserFromPrefs(_allUsers.value))
     val currentUser: Flow<UserEntity?> = _currentUser.asStateFlow()
 
     // Dynamic Role Permissions
@@ -290,47 +397,95 @@ class PoultryRepository(
     val allExpenses: Flow<List<MonthlyExpenseEntity>> = _allExpenses.asStateFlow()
 
     // Pre-populated Shareholders
-    private val _allShareholders = MutableStateFlow<List<ShareholderEntity>>(
-        listOf(
-            ShareholderEntity(id = "sh_1", name = "সাহারিয়ার রেদোয়ান (৪০%)", createdAt = System.currentTimeMillis() - 86400000L * 30),
-            ShareholderEntity(id = "sh_2", name = "কাজী ইকবাল হোসেন (৩৫%)", createdAt = System.currentTimeMillis() - 86400000L * 30),
-            ShareholderEntity(id = "sh_3", name = "তানভীর আহমেদ (২৫%)", createdAt = System.currentTimeMillis() - 86400000L * 30)
-        )
+    private val defaultShareholders = listOf(
+        ShareholderEntity(id = "sh_1", name = "মোঃ শাহাদাত হোসেন শোভন (৪০%)", createdAt = System.currentTimeMillis() - 86400000L * 30),
+        ShareholderEntity(id = "sh_2", name = "মোঃ সজিব মিয়া (৩৫%)", createdAt = System.currentTimeMillis() - 86400000L * 30),
+        ShareholderEntity(id = "sh_3", name = "মিজানুর রহমান সাকিব (২৫%)", createdAt = System.currentTimeMillis() - 86400000L * 30)
     )
+
+    private fun loadShareholdersFromPrefs(): List<ShareholderEntity> {
+        val json = prefs.getString(PREF_KEY_SHAREHOLDERS_JSON, null)
+        if (!json.isNullOrBlank()) {
+            try {
+                val list = shareholdersListAdapter.fromJson(json)
+                if (!list.isNullOrEmpty()) {
+                    return list
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading shareholders from prefs", e)
+            }
+        }
+        return defaultShareholders
+    }
+
+    private fun saveShareholdersToPrefs(list: List<ShareholderEntity>) {
+        try {
+            val json = shareholdersListAdapter.toJson(list)
+            prefs.edit().putString(PREF_KEY_SHAREHOLDERS_JSON, json).apply()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving shareholders to prefs", e)
+        }
+    }
+
+    private val _allShareholders = MutableStateFlow<List<ShareholderEntity>>(loadShareholdersFromPrefs())
     val allShareholders: Flow<List<ShareholderEntity>> = _allShareholders.asStateFlow()
 
     // Pre-populated Shareholder Payments
-    private val _allShareholderPayments = MutableStateFlow<List<ShareholderPaymentEntity>>(
-        listOf(
-            ShareholderPaymentEntity(
-                id = "shp_1",
-                shareholderId = "sh_1",
-                shareholderName = "সাহারিয়ার রেদোয়ান (৪০%)",
-                date = getPastDateDisplay(3),
-                amount = 45000.0,
-                paymentMethod = "Bank",
-                note = "অক্টোবর মাসের লভ্যাংশ বন্টন"
-            ),
-            ShareholderPaymentEntity(
-                id = "shp_2",
-                shareholderId = "sh_2",
-                shareholderName = "কাজী ইকবাল হোসেন (৩৫%)",
-                date = getPastDateDisplay(3),
-                amount = 39375.0,
-                paymentMethod = "Bank",
-                note = "অক্টোবর মাসের লভ্যাংশ বন্টন"
-            ),
-            ShareholderPaymentEntity(
-                id = "shp_3",
-                shareholderId = "sh_3",
-                shareholderName = "তানভীর আহমেদ (২৫%)",
-                date = getPastDateDisplay(3),
-                amount = 28125.0,
-                paymentMethod = "bKash",
-                note = "অক্টোবর মাসের লভ্যাংশ বন্টন"
-            )
+    private val defaultShareholderPayments = listOf(
+        ShareholderPaymentEntity(
+            id = "shp_1",
+            shareholderId = "sh_1",
+            shareholderName = "মোঃ শাহাদাত হোসেন শোভন (৪০%)",
+            date = getPastDateDisplay(3),
+            amount = 45000.0,
+            paymentMethod = "Bank",
+            note = "অক্টোবর মাসের লভ্যাংশ বন্টন"
+        ),
+        ShareholderPaymentEntity(
+            id = "shp_2",
+            shareholderId = "sh_2",
+            shareholderName = "মোঃ সজিব মিয়া (৩৫%)",
+            date = getPastDateDisplay(3),
+            amount = 39375.0,
+            paymentMethod = "Bank",
+            note = "অক্টোবর মাসের লভ্যাংশ বন্টন"
+        ),
+        ShareholderPaymentEntity(
+            id = "shp_3",
+            shareholderId = "sh_3",
+            shareholderName = "মিজানুর রহমান সাকিব (২৫%)",
+            date = getPastDateDisplay(3),
+            amount = 28125.0,
+            paymentMethod = "bKash",
+            note = "অক্টোবর মাসের লভ্যাংশ বন্টন"
         )
     )
+
+    private fun loadShareholderPaymentsFromPrefs(): List<ShareholderPaymentEntity> {
+        val json = prefs.getString(PREF_KEY_SHAREHOLDER_PAYMENTS_JSON, null)
+        if (!json.isNullOrBlank()) {
+            try {
+                val list = shareholderPaymentsListAdapter.fromJson(json)
+                if (!list.isNullOrEmpty()) {
+                    return list
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading shareholder payments from prefs", e)
+            }
+        }
+        return defaultShareholderPayments
+    }
+
+    private fun saveShareholderPaymentsToPrefs(list: List<ShareholderPaymentEntity>) {
+        try {
+            val json = shareholderPaymentsListAdapter.toJson(list)
+            prefs.edit().putString(PREF_KEY_SHAREHOLDER_PAYMENTS_JSON, json).apply()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving shareholder payments to prefs", e)
+        }
+    }
+
+    private val _allShareholderPayments = MutableStateFlow<List<ShareholderPaymentEntity>>(loadShareholderPaymentsFromPrefs())
     val allShareholderPayments: Flow<List<ShareholderPaymentEntity>> = _allShareholderPayments.asStateFlow()
 
     // Pre-populated Staff
@@ -440,9 +595,12 @@ class PoultryRepository(
 
         if (!_allUsers.value.any { it.email.equals(cleanEmail, ignoreCase = true) }) {
             _allUsers.value = _allUsers.value + matchedUser
+            saveUsersToPrefs(_allUsers.value)
         }
 
         _currentUser.value = matchedUser
+        saveCurrentUserToPrefs(matchedUser)
+
         if (rememberMe) {
             prefs.edit()
                 .putBoolean(PREF_KEY_REMEMBER, true)
@@ -464,7 +622,9 @@ class PoultryRepository(
             rememberLogin = rememberMe
         )
         _allUsers.value = _allUsers.value + newUser
+        saveUsersToPrefs(_allUsers.value)
         _currentUser.value = newUser
+        saveCurrentUserToPrefs(newUser)
 
         if (rememberMe) {
             prefs.edit()
@@ -478,19 +638,23 @@ class PoultryRepository(
     suspend fun adminAddUser(user: UserEntity): Result<Unit> = withContext(Dispatchers.IO) {
         val targetUser = if (user.id.isBlank()) user.copy(id = UUID.randomUUID().toString(), isApproved = true) else user
         _allUsers.value = _allUsers.value.filter { it.id != targetUser.id } + targetUser
+        saveUsersToPrefs(_allUsers.value)
         Result.success(Unit)
     }
 
     suspend fun adminUpdateUser(user: UserEntity): Result<Unit> = withContext(Dispatchers.IO) {
         _allUsers.value = _allUsers.value.map { if (it.id == user.id) user else it }
+        saveUsersToPrefs(_allUsers.value)
         if (_currentUser.value?.id == user.id) {
             _currentUser.value = user
+            saveCurrentUserToPrefs(user)
         }
         Result.success(Unit)
     }
 
     suspend fun deleteUser(userId: String): Result<Unit> = withContext(Dispatchers.IO) {
         _allUsers.value = _allUsers.value.filter { it.id != userId }
+        saveUsersToPrefs(_allUsers.value)
         if (_currentUser.value?.id == userId) {
             signOut()
         }
@@ -509,7 +673,9 @@ class PoultryRepository(
             profileImageUri = profileImageUri ?: curr.profileImageUri
         )
         _currentUser.value = updated
+        saveCurrentUserToPrefs(updated)
         _allUsers.value = _allUsers.value.map { if (it.id == updated.id) updated else it }
+        saveUsersToPrefs(_allUsers.value)
         Result.success(Unit)
     }
 
@@ -523,7 +689,7 @@ class PoultryRepository(
 
     fun signOut() {
         _currentUser.value = null
-        prefs.edit().putBoolean(PREF_KEY_REMEMBER, false).apply()
+        saveCurrentUserToPrefs(null)
     }
 
     fun isUserLoggedIn(): Boolean {
@@ -663,6 +829,7 @@ class PoultryRepository(
         }
         val entity = ShareholderEntity(id = "sh_${UUID.randomUUID()}", name = trimmed)
         _allShareholders.value = _allShareholders.value + entity
+        saveShareholdersToPrefs(_allShareholders.value)
         onSuccess()
     }
 
@@ -678,6 +845,7 @@ class PoultryRepository(
             return@withContext
         }
         _allShareholders.value = _allShareholders.value.map { if (it.id == id) it.copy(name = trimmed) else it }
+        saveShareholdersToPrefs(_allShareholders.value)
         onSuccess()
     }
 
@@ -687,6 +855,7 @@ class PoultryRepository(
         onError: (String) -> Unit
     ) = withContext(Dispatchers.IO) {
         _allShareholders.value = _allShareholders.value.filter { it.id != id }
+        saveShareholdersToPrefs(_allShareholders.value)
         onSuccess()
     }
 
@@ -697,6 +866,7 @@ class PoultryRepository(
     ) = withContext(Dispatchers.IO) {
         val finalPayment = if (payment.id.isBlank()) payment.copy(id = "shp_${UUID.randomUUID()}") else payment
         _allShareholderPayments.value = listOf(finalPayment) + _allShareholderPayments.value
+        saveShareholderPaymentsToPrefs(_allShareholderPayments.value)
         onSuccess()
     }
 
@@ -706,6 +876,7 @@ class PoultryRepository(
         onError: (String) -> Unit
     ) = withContext(Dispatchers.IO) {
         _allShareholderPayments.value = _allShareholderPayments.value.map { if (it.id == payment.id) payment else it }
+        saveShareholderPaymentsToPrefs(_allShareholderPayments.value)
         onSuccess()
     }
 
@@ -715,6 +886,7 @@ class PoultryRepository(
         onError: (String) -> Unit
     ) = withContext(Dispatchers.IO) {
         _allShareholderPayments.value = _allShareholderPayments.value.filter { it.id != id }
+        saveShareholderPaymentsToPrefs(_allShareholderPayments.value)
         onSuccess()
     }
 

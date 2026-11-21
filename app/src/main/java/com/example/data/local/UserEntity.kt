@@ -30,7 +30,7 @@ data class UserEntity(
     // True if user is approved by admin, or is the root Admin
     fun isApprovedUser(): Boolean = isApproved || isAdmin()
 
-    fun isAdmin(): Boolean = role.equals("ADMIN", ignoreCase = true) || email.equals("sahariarredwan5@gmail.com", ignoreCase = true) || email.equals("admin@kaziagro.com", ignoreCase = true)
+    fun isAdmin(): Boolean = role.equals("ADMIN", ignoreCase = true) || email.equals("admin@kaziagro.com", ignoreCase = true)
     
     fun isManager(): Boolean = role.equals("MANAGER", ignoreCase = true)
     
